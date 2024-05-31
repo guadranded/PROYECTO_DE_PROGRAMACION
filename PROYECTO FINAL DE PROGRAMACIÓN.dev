@@ -1,62 +1,999 @@
-[Project]
-filename=PROYECTO FINAL DE PROGRAMACI�N.dev
-name=PRUEBAPROYECTO
-Type=1
-Ver=2
-ObjFiles=
-Includes="C:\Program Files\MySQL\Connector C++ 8.0\include";"C:\Program Files\MySQL\MySQL Server 8.0\include"
-Libs="C:\Program Files\MySQL\Connector C++ 8.0\lib64";"C:\Program Files\MySQL\MySQL Server 8.0\lib"
-PrivateResource=
-ResourceIncludes=
-MakeIncludes=
-Compiler=
-CppCompiler=
-Linker=-lmysql_@@_
-IsCpp=1
-Icon=
-ExeOutput=
-ObjectOutput=
-LogOutput=
-LogOutputEnabled=0
-OverrideOutput=0
-OverrideOutputName=PROYECTO FINAL DE PROGRAMACI�N.exe
-HostApplication=
-UseCustomMakefile=0
-CustomMakefile=
-CommandLine=
-Folders=
-IncludeVersionInfo=0
-SupportXPThemes=0
-CompilerSet=0
-CompilerSettings=0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;12;0;0;0
-UnitCount=1
+#include <iostream>
+#include <mysql.h>
+#include <string>
 
-[VersionInfo]
-Major=1
-Minor=0
-Release=0
-Build=0
-LanguageID=1033
-CharsetID=1252
-CompanyName=
-FileVersion=1.0.0.0
-FileDescription=Developed using the Dev-C++ IDE
-InternalName=
-LegalCopyright=
-LegalTrademarks=
-OriginalFilename=
-ProductName=
-ProductVersion=1.0.0.0
-AutoIncBuildNr=0
-SyncProduct=1
+using namespace std;
 
-[Unit1]
-FileName=main.cpp
-CompileCpp=1
-Folder=
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
+class ConexionBD {
+private:
+    MYSQL* conectar;
+    MYSQL_RES* resultado;
+public:
+    ConexionBD() {
+        conectar = mysql_init(0);
+        conectar = mysql_real_connect(conectar, "localhost", "root", "123456", "zoologico_la_aurora", 3306, NULL, 0); //conexión a la BD.
+        if (conectar) {
+            cout << "Conexion Exitosa" << endl;
+        } else {
+            cout << "Conexion Fallida" << endl;
+        }
+    }
+
+    bool ejecutarConsulta(string consulta) {
+        if (!conectar) {
+            cerr << "No se ha conectado a la base de datos" << endl;
+            return false;
+        }
+        int estado = mysql_query(conectar, consulta.c_str());
+        if (!estado) {
+            cout << "Consulta ejecutada correctamente" << endl;
+            return true;
+        } else {
+            cerr << "Error al ejecutar la consulta" << mysql_error(conectar) << endl;
+            return false;
+        }
+    }
+
+    MYSQL_RES* obtenerResultado() {
+        resultado = mysql_store_result(conectar);
+        return resultado;
+    }
+
+    void liberarResultado(MYSQL_RES* resultado) {
+        mysql_free_result(resultado);
+    }
+};
+
+// funciones para la tabla dueño.
+void mostrarDatosDueno(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM dueño"; //se selecciona la tabla.
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado();
+        if (resultado) {
+            MYSQL_ROW fila;
+            while ((fila = mysql_fetch_row(resultado))) {
+                cout << "id: " << fila[0] << ", nombres: " << fila[1] << ", apellidos: " << fila[2] << ", sexo: " << fila[3] << ", correo: " << fila[4] << endl;
+            }
+            conexion.liberarResultado(resultado);
+        }
+    }
+}
+
+void insertarDatosDueno(ConexionBD& conexion) {
+    string nombres, apellidos, sexo, correo;
+    cout << "Ingrese los nombres del dueño: ";
+    cin.ignore(); // Limpiar el buffer de entrada
+    getline(cin, nombres); //getline para mostrar datos en una línea.
+    cout << "Ingrese los apellidos del dueño: ";
+    getline(cin, apellidos);
+    cout << "Ingrese el sexo del dueño: ";
+    getline(cin, sexo);
+    cout << "Ingrese el correo del dueño: ";
+    getline(cin, correo);
+
+    string consulta = "INSERT INTO dueño (nombres, apellidos, sexo, correo) VALUES ('" + nombres + "', '" + apellidos + "', '" + sexo + "', '" + correo + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosDueno(ConexionBD& conexion) {
+    string id, nombres, apellidos, sexo, correo;
+    cout << "Ingrese el id del dueño que desea editar: ";
+    cin >> id;
+    cin.ignore();
+    cout << "Ingrese los nuevos nombres del dueño: ";
+    getline(cin, nombres);
+    cout << "Ingrese los nuevos apellidos del dueño: ";
+    getline(cin, apellidos);
+    cout << "Ingrese el nuevo sexo del dueño: ";
+    getline(cin, sexo);
+    cout << "Ingrese el nuevo correo del dueño: ";
+    getline(cin, correo);
+
+    string consulta = "UPDATE dueño SET nombres = '" + nombres + "', apellidos = '" + apellidos + "', sexo = '" + sexo + "', correo = '" + correo + "' WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosDueno(ConexionBD& conexion) {
+    string id;
+    cout << "Ingrese el id del dueño que desea eliminar: ";
+    cin >> id;
+
+    string consulta = "DELETE FROM dueño WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// funciones para la tabla dimension.
+void mostrarDatosDimension(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM dimension";
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado();
+        if (resultado) {
+            MYSQL_ROW fila; //MYSQL_ROW es un puntero que 
+            while ((fila = mysql_fetch_row(resultado))) {
+                cout << "id: " << fila[0] << ", perimetro: " << fila[1] << ", area: " << fila[2] << endl; //fila es el número de espacios.
+            }
+            conexion.liberarResultado(resultado); //si void se ejecuta conexion llama a la función "liberarResultado".
+        }
+    }
+}
+
+void insertarDatosDimension(ConexionBD& conexion) {
+    string perimetro, area;
+    cout << "Ingrese el perimetro: ";
+    cin.ignore();
+    getline(cin, perimetro);
+    cout << "Ingrese el area: ";
+    getline(cin, area);
+
+    string consulta = "INSERT INTO dimension (perimetro, area) VALUES ('" + perimetro + "', '" + area + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosDimension(ConexionBD& conexion) {
+    string id, perimetro, area;
+    cout << "Ingrese el id de la dimension que desea editar: ";
+    cin >> id;
+    cin.ignore();
+    cout << "Ingrese el nuevo perimetro: ";
+    getline(cin, perimetro);
+    cout << "Ingrese el nuevo area: ";
+    getline(cin, area);
+
+    string consulta = "UPDATE dimension SET perimetro = '" + perimetro + "', area = '" + area + "' WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosDimension(ConexionBD& conexion) {
+    string id;
+    cout << "Ingrese el id de la dimension que desea eliminar: ";
+    cin >> id;
+
+    string consulta = "DELETE FROM dimension WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// Funciones para la tabla zoologico
+void mostrarDatosZoologico(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM zoologico";
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado();
+        if (resultado) {
+            MYSQL_ROW fila;
+            while ((fila = mysql_fetch_row(resultado))) {
+                cout << "codigo_id: " << fila[0] << ", no_de_animales: " << fila[1] << ", direccion: " << fila[2] << ", dueño_id: " << fila[3] << ", dimension_id: " << fila[4] << endl;
+            }
+            conexion.liberarResultado(resultado);
+        }
+    }
+}
+
+void insertarDatosZoologico(ConexionBD& conexion) {
+    string noAnimales, direccion, duenoId, dimensionId;
+    cout << "Ingrese el número de animales: ";
+    cin.ignore(); // función para limpiar el buffer de entrada cuando se ingresa un tipo de dato erróneo.
+    getline(cin, noAnimales);
+    cout << "Ingrese la dirección del zoologico: ";
+    getline(cin, direccion);
+    cout << "Ingrese el ID del dueño: ";
+    cin >> duenoId;
+    cout << "Ingrese el ID de la dimensión: ";
+    cin >> dimensionId;
+
+    string consulta = "INSERT INTO zoologico (no_de_animales, direccion, dueño_id, dimension_id) VALUES ('" + noAnimales + "', '" + direccion + "', '" + duenoId + "', '" + dimensionId + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosZoologico(ConexionBD& conexion) {
+    string codigo, noAnimales, direccion, duenoId, dimensionId;
+    cout << "Ingrese el código del zoologico que desea editar: ";
+    cin >> codigo;
+    cin.ignore();
+    cout << "Ingrese el nuevo número de animales: ";
+    getline(cin, noAnimales);
+    cout << "Ingrese la nueva dirección del zoologico: ";
+    getline(cin, direccion);
+    cout << "Ingrese el nuevo ID del dueño: ";
+    cin >> duenoId;
+    cout << "Ingrese el nuevo ID de la dimensión: ";
+    cin >> dimensionId;
+
+    string consulta = "UPDATE zoologico SET no_de_animales = '" + noAnimales + "', direccion = '" + direccion + "', dueño_id = '" + duenoId + "', dimension_id = '" + dimensionId + "' WHERE codigo_id = '" + codigo + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosZoologico(ConexionBD& conexion) {
+    string codigo;
+    cout << "Ingrese el código del zoologico que desea eliminar: ";
+    cin >> codigo;
+
+    string consulta = "DELETE FROM zoologico WHERE codigo_id = '" + codigo + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// Funciones para la tabla habitat
+void mostrarDatosHabitat(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM habitat";
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado();
+        if (resultado) {
+            MYSQL_ROW fila;
+            while ((fila = mysql_fetch_row(resultado))) {
+                cout << "id: " << fila[0] << ", nombre: " << fila[1] << ", descripcion: " << fila[2] << ", zoologico_id: " << fila[3] << endl;
+            }
+            conexion.liberarResultado(resultado);
+        }
+    }
+}
+
+void insertarDatosHabitat(ConexionBD& conexion) {
+    string nombre, descripcion, zoologicoId;
+    cout << "Ingrese el nombre del habitat: ";
+    cin.ignore(); // función para limpiar el buffer de entrada cuando se ingresa un tipo de dato erróneo.
+    getline(cin, nombre);
+    cout << "Ingrese la descripción del habitat: ";
+    getline(cin, descripcion);
+    cout << "Ingrese el ID del zoologico: ";
+    cin >> zoologicoId;
+
+    string consulta = "INSERT INTO habitat (nombre, descripcion, zoologico_id) VALUES ('" + nombre + "', '" + descripcion + "', '" + zoologicoId + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosHabitat(ConexionBD& conexion) {
+    string id, nombre, descripcion, zoologicoId;
+    cout << "Ingrese el id del habitat que desea editar: ";
+    cin >> id;
+    cin.ignore();
+    cout << "Ingrese el nuevo nombre del habitat: ";
+    getline(cin, nombre);
+    cout << "Ingrese la nueva descripción del habitat: ";
+    getline(cin, descripcion);
+    cout << "Ingrese el nuevo ID del zoologico: ";
+    cin >> zoologicoId;
+
+    string consulta = "UPDATE habitat SET nombre = '" + nombre + "', descripcion = '" + descripcion + "', zoologico_id = '" + zoologicoId + "' WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosHabitat(ConexionBD& conexion) {
+    string id;
+    cout << "Ingrese el id del habitat que desea eliminar: ";
+    cin >> id;
+
+    string consulta = "DELETE FROM habitat WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// Funciones para la tabla clima
+void mostrarDatosClima(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM clima";
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado(); //MYSQL_RES almacena un conjunto de datos proviniente de las filas y columnas de la variable indicada.
+        if (resultado) {
+            MYSQL_ROW fila;
+            while ((fila = mysql_fetch_row(resultado))) {
+                cout << "id: " << fila[0] << ", tipo_de_clima: " << fila[1] << ", habitat_id: " << fila[2] << endl;
+            }
+            conexion.liberarResultado(resultado);
+        }
+    }
+}
+
+void insertarDatosClima(ConexionBD& conexion) {
+    string tipoDeClima, habitatId;
+    cout << "Ingrese el tipo de clima: ";
+    cin.ignore(); // función para limpiar el buffer de entrada cuando se ingresa un tipo de dato erróneo.
+    getline(cin, tipoDeClima);
+    cout << "Ingrese el ID del habitat: ";
+    cin >> habitatId;
+
+    string consulta = "INSERT INTO clima (tipo_de_clima, habitat_id) VALUES ('" + tipoDeClima + "', '" + habitatId + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosClima(ConexionBD& conexion) {
+    string id, tipoDeClima, habitatId;
+    cout << "Ingrese el id del clima que desea editar: ";
+    cin >> id;
+    cin.ignore();
+    cout << "Ingrese el nuevo tipo de clima: ";
+    getline(cin, tipoDeClima);
+    cout << "Ingrese el nuevo ID del habitat: ";
+    cin >> habitatId;
+
+    string consulta = "UPDATE clima SET tipo_de_clima = '" + tipoDeClima + "', habitat_id = '" + habitatId + "' WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosClima(ConexionBD& conexion) {
+    string id;
+    cout << "Ingrese el id del clima que desea eliminar: ";
+    cin >> id;
+
+    string consulta = "DELETE FROM clima WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// Funciones para la tabla vegetacion
+void mostrarDatosVegetacion(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM vegetacion";
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado();
+        if (resultado) {
+            MYSQL_ROW fila;
+            while ((fila = mysql_fetch_row(resultado))) {
+                cout << "id: " << fila[0] << ", tipo_de_vegetacion: " << fila[1] << ", habitat_id: " << fila[2] << endl;
+            }
+            conexion.liberarResultado(resultado);
+        }
+    }
+}
+
+void insertarDatosVegetacion(ConexionBD& conexion) {
+    string tipoDeVegetacion, habitatId;
+    cout << "Ingrese el tipo de vegetacion: ";
+    cin.ignore(); // función para limpiar el buffer de entrada cuando se ingresa un tipo de dato erróneo.
+    getline(cin, tipoDeVegetacion);
+    cout << "Ingrese el ID del habitat: ";
+    cin >> habitatId;
+
+    string consulta = "INSERT INTO vegetacion (tipo_de_vegetacion, habitat_id) VALUES ('" + tipoDeVegetacion + "', '" + habitatId + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosVegetacion(ConexionBD& conexion) {
+    string id, tipoDeVegetacion, habitatId;
+    cout << "Ingrese el id de la vegetacion que desea editar: ";
+    cin >> id;
+    cin.ignore();
+    cout << "Ingrese el nuevo tipo de vegetacion: ";
+    getline(cin, tipoDeVegetacion);
+    cout << "Ingrese el nuevo ID del habitat: ";
+    cin >> habitatId;
+
+    string consulta = "UPDATE vegetacion SET tipo_de_vegetacion = '" + tipoDeVegetacion + "', habitat_id = '" + habitatId + "' WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosVegetacion(ConexionBD& conexion) {
+    string id;
+    cout << "Ingrese el id de la vegetacion que desea eliminar: ";
+    cin >> id;
+
+    string consulta = "DELETE FROM vegetacion WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// Funciones para la tabla sexo
+void mostrarDatosSexo(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM sexo";
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado();
+        if (resultado) {
+            MYSQL_ROW fila;
+            while ((fila = mysql_fetch_row(resultado))) {
+                cout << "id: " << fila[0] << ", sexo_del_animal: " << fila[1] << endl;
+            }
+            conexion.liberarResultado(resultado);
+        }
+    }
+}
+
+void insertarDatosSexo(ConexionBD& conexion) {
+    string sexoDelAnimal;
+    cout << "Ingrese el sexo del animal: ";
+    cin.ignore(); // función para limpiar el buffer de entrada cuando se ingresa un tipo de dato erróneo.
+    getline(cin, sexoDelAnimal);
+
+    string consulta = "INSERT INTO sexo (sexo_del_animal) VALUES ('" + sexoDelAnimal + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosSexo(ConexionBD& conexion) {
+    string id, sexoDelAnimal;
+    cout << "Ingrese el id del sexo que desea editar: ";
+    cin >> id;
+    cin.ignore();
+    cout << "Ingrese el nuevo sexo del animal: ";
+    getline(cin, sexoDelAnimal);
+
+    string consulta = "UPDATE sexo SET sexo_del_animal = '" + sexoDelAnimal + "' WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosSexo(ConexionBD& conexion) {
+    string id;
+    cout << "Ingrese el id del sexo que desea eliminar: ";
+    cin >> id;
+
+    string consulta = "DELETE FROM sexo WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// Funciones para la tabla especie
+void mostrarDatosEspecie(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM especie";
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado();
+        if (resultado) {
+            MYSQL_ROW fila;
+            while ((fila = mysql_fetch_row(resultado))) { //mysql_fetch_row obtiene la siguiente fila de un conjunto de resultados.
+                cout << "id: " << fila[0] << ", nombre_de_especie: " << fila[1] << endl;
+            }
+            conexion.liberarResultado(resultado);
+        }
+    }
+}
+
+void insertarDatosEspecie(ConexionBD& conexion) {
+    string nombreDeEspecie;
+    cout << "Ingrese el nombre de la especie: ";
+    cin.ignore(); // función para limpiar el buffer de entrada cuando se ingresa un tipo de dato erróneo.
+    getline(cin, nombreDeEspecie);
+
+    string consulta = "INSERT INTO especie (nombre_de_especie) VALUES ('" + nombreDeEspecie + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosEspecie(ConexionBD& conexion) {
+    string id, nombreDeEspecie;
+    cout << "Ingrese el id de la especie que desea editar: ";
+    cin >> id;
+    cin.ignore();
+    cout << "Ingrese el nuevo nombre de la especie: ";
+    getline(cin, nombreDeEspecie);
+
+    string consulta = "UPDATE especie SET nombre_de_especie = '" + nombreDeEspecie + "' WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosEspecie(ConexionBD& conexion) {
+    string id;
+    cout << "Ingrese el id de la especie que desea eliminar: ";
+    cin >> id;
+
+    string consulta = "DELETE FROM especie WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// Funciones para la tabla dieta
+void mostrarDatosDieta(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM dieta";
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado();
+        if (resultado) {
+            MYSQL_ROW fila;
+            while ((fila = mysql_fetch_row(resultado))) {
+                cout << "id: " << fila[0] << ", tipo_de_dieta: " << fila[1] << endl;
+            }
+            conexion.liberarResultado(resultado);
+        }
+    }
+}
+
+void insertarDatosDieta(ConexionBD& conexion) {
+    string tipoDeDieta;
+    cout << "Ingrese el tipo de dieta: ";
+    cin.ignore(); // función para limpiar el buffer de entrada cuando se ingresa un tipo de dato erróneo.
+    getline(cin, tipoDeDieta);
+
+    string consulta = "INSERT INTO dieta (tipo_de_dieta) VALUES ('" + tipoDeDieta + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosDieta(ConexionBD& conexion) {
+    string id, tipoDeDieta;
+    cout << "Ingrese el id de la dieta que desea editar: ";
+    cin >> id;
+    cin.ignore();
+    cout << "Ingrese el nuevo tipo de dieta: ";
+    getline(cin, tipoDeDieta);
+
+    string consulta = "UPDATE dieta SET tipo_de_dieta = '" + tipoDeDieta + "' WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosDieta(ConexionBD& conexion) {
+    string id;
+    cout << "Ingrese el id de la dieta que desea eliminar: ";
+    cin >> id;
+
+    string consulta = "DELETE FROM dieta WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// Funciones para la tabla animal
+void mostrarDatosAnimal(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM animal";
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado();
+        if (resultado) {
+            MYSQL_ROW fila;
+            while ((fila = mysql_fetch_row(resultado))) {
+                cout << "id: " << fila[0] << ", nombre_comun: " << fila[1] << ", nombre_cientifico: " << fila[2] << ", edad: " << fila[3] << ", estatura: " << fila[4] << ", peso: " << fila[5] << ", descripcion: " << fila[6] << ", sexo_id: " << fila[7] << ", especie_id: " << fila[8] << ", habitat_id: " << fila[9] << endl;
+            }
+            conexion.liberarResultado(resultado);
+        }
+    }
+}
+
+void insertarDatosAnimal(ConexionBD& conexion) {
+    string nombreComun, nombreCientifico, edad, estatura, peso, descripcion, sexoId, especieId, habitatId;
+    cout << "Ingrese el nombre común del animal: ";
+    cin.ignore(); // función para limpiar el buffer de entrada cuando se ingresa un tipo de dato erróneo.
+    getline(cin, nombreComun);
+    cout << "Ingrese el nombre científico del animal: ";
+    getline(cin, nombreCientifico);
+    cout << "Ingrese la edad del animal: ";
+    getline(cin, edad);
+    cout << "Ingrese la estatura del animal: ";
+    getline(cin, estatura);
+    cout << "Ingrese el peso del animal: ";
+    getline(cin, peso);
+    cout << "Ingrese la descripción del animal: ";
+    getline(cin, descripcion);
+    cout << "Ingrese el ID del sexo: ";
+    cin >> sexoId;
+    cout << "Ingrese el ID de la especie: ";
+    cin >> especieId;
+    cout << "Ingrese el ID del habitat: ";
+    cin >> habitatId;
+
+    string consulta = "INSERT INTO animal (nombre_comun, nombre_cientifico, edad, estatura, peso, descripcion, sexo_id, especie_id, habitat_id) VALUES ('" + nombreComun + "', '" + nombreCientifico + "', '" + edad + "', '" + estatura + "', '" + peso + "', '" + descripcion + "', '" + sexoId + "', '" + especieId + "', '" + habitatId + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosAnimal(ConexionBD& conexion) {
+    string id, nombreComun, nombreCientifico, edad, estatura, peso, descripcion, sexoId, especieId, habitatId;
+    cout << "Ingrese el id del animal que desea editar: ";
+    cin >> id;
+    cin.ignore();
+    cout << "Ingrese el nuevo nombre común del animal: ";
+    getline(cin, nombreComun);
+    cout << "Ingrese el nuevo nombre científico del animal: ";
+    getline(cin, nombreCientifico);
+    cout << "Ingrese la nueva edad del animal: ";
+    getline(cin, edad);
+    cout << "Ingrese la nueva estatura del animal: ";
+    getline(cin, estatura);
+    cout << "Ingrese el nuevo peso del animal: ";
+    getline(cin, peso);
+    cout << "Ingrese la nueva descripción del animal: ";
+    getline(cin, descripcion);
+    cout << "Ingrese el nuevo ID del sexo: ";
+    cin >> sexoId;
+    cout << "Ingrese el nuevo ID de la especie: ";
+    cin >> especieId;
+    cout << "Ingrese el nuevo ID del habitat: ";
+    cin >> habitatId;
+
+    string consulta = "UPDATE animal SET nombre_comun = '" + nombreComun + "', nombre_cientifico = '" + nombreCientifico + "', edad = '" + edad + "', estatura = '" + estatura + "', peso = '" + peso + "', descripcion = '" + descripcion + "', sexo_id = '" + sexoId + "', especie_id = '" + especieId + "', habitat_id = '" + habitatId + "' WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosAnimal(ConexionBD& conexion) {
+    string id;
+    cout << "Ingrese el id del animal que desea eliminar: ";
+    cin >> id;
+
+    string consulta = "DELETE FROM animal WHERE id = '" + id + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// Funciones para la tabla animal_has_dieta
+void mostrarDatosAnimalHasDieta(ConexionBD& conexion) {
+    string consulta = "SELECT * FROM animal_has_dieta";
+    if (conexion.ejecutarConsulta(consulta)) {
+        MYSQL_RES* resultado = conexion.obtenerResultado();
+        if (resultado) {
+            MYSQL_ROW fila;
+            while ((fila = mysql_fetch_row(resultado))) {
+                cout << "dieta_id: " << fila[0] << ", animal_id: " << fila[1] << endl;
+            }
+            conexion.liberarResultado(resultado);
+        }
+    }
+}
+
+void insertarDatosAnimalHasDieta(ConexionBD& conexion) {
+    string dietaId, animalId;
+    cout << "Ingrese el ID de la dieta: ";
+    cin >> dietaId;
+    cout << "Ingrese el ID del animal: ";
+    cin >> animalId;
+
+    string consulta = "INSERT INTO animal_has_dieta (dieta_id, animal_id) VALUES ('" + dietaId + "', '" + animalId + "')";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void editarDatosAnimalHasDieta(ConexionBD& conexion) {
+    string dietaId, animalId, nuevoDietaId, nuevoAnimalId;
+    cout << "Ingrese el ID de la dieta que desea editar: ";
+    cin >> dietaId;
+    cout << "Ingrese el ID del animal que desea editar: ";
+    cin >> animalId;
+    cout << "Ingrese el nuevo ID de la dieta: ";
+    cin >> nuevoDietaId;
+    cout << "Ingrese el nuevo ID del animal: ";
+    cin >> nuevoAnimalId;
+
+    string consulta = "UPDATE animal_has_dieta SET dieta_id = '" + nuevoDietaId + "', animal_id = '" + nuevoAnimalId + "' WHERE dieta_id = '" + dietaId + "' AND animal_id = '" + animalId + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+void eliminarDatosAnimalHasDieta(ConexionBD& conexion) {
+    string dietaId, animalId;
+    cout << "Ingrese el ID de la dieta que desea eliminar: ";
+    cin >> dietaId;
+    cout << "Ingrese el ID del animal que desea eliminar: ";
+    cin >> animalId;
+
+    string consulta = "DELETE FROM animal_has_dieta WHERE dieta_id = '" + dietaId + "' AND animal_id = '" + animalId + "'";
+    conexion.ejecutarConsulta(consulta);
+}
+
+// Menú principal.
+void menuPrincipal() {
+    ConexionBD conexion;
+    int opcion;
+    do {
+        cout << "Menu Principal" << endl;
+        cout << "1. Gestión de Dueños" << endl;
+        cout << "2. Gestión de Dimensiones" << endl;
+        cout << "3. Gestión de Zoologicos" << endl;
+        cout << "4. Gestión de Habitats" << endl;
+        cout << "5. Gestión de Climas" << endl;
+        cout << "6. Gestión de Vegetaciones" << endl;
+        cout << "7. Gestión de Sexos" << endl;
+        cout << "8. Gestión de Especies" << endl;
+        cout << "9. Gestión de Dietas" << endl;
+        cout << "10. Gestión de Animales" << endl;
+        cout << "11. Gestión de Animal-Dieta" << endl;
+        cout << "0. Salir" << endl;
+        cout << "Ingrese una opción: ";
+        cin >> opcion;
+
+        switch (opcion) {
+            case 1:
+                {
+                    int opcionDueno;
+                    do {
+                        cout << "Gestión de Dueños" << endl;
+                        cout << "1. Mostrar dueños" << endl;
+                        cout << "2. Insertar dueño" << endl;
+                        cout << "3. Editar dueño" << endl;
+                        cout << "4. Eliminar dueño" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionDueno;
+
+                        switch (opcionDueno) {
+                            case 1:
+                                mostrarDatosDueno(conexion);
+                                break;
+                            case 2:
+                                insertarDatosDueno(conexion);
+                                break;
+                            case 3:
+                                editarDatosDueno(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosDueno(conexion);
+                                break;
+                        }
+                    } while (opcionDueno != 0);
+                }
+                break;
+            case 2:
+                {
+                    int opcionDimension;
+                    do {
+                        cout << "Gestión de Dimensiones" << endl;
+                        cout << "1. Mostrar dimensiones" << endl;
+                        cout << "2. Insertar dimension" << endl;
+                        cout << "3. Editar dimension" << endl;
+                        cout << "4. Eliminar dimension" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionDimension;
+
+                        switch (opcionDimension) {
+                            case 1:
+                                mostrarDatosDimension(conexion);
+                                break;
+                            case 2:
+                                insertarDatosDimension(conexion);
+                                break;
+                            case 3:
+                                editarDatosDimension(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosDimension(conexion);
+                                break;
+                        }
+                    } while (opcionDimension != 0);
+                }
+                break;
+            case 3:
+                {
+                    int opcionZoologico;
+                    do {
+                        cout << "Gestión de Zoologicos" << endl;
+                        cout << "1. Mostrar zoologicos" << endl;
+                        cout << "2. Insertar zoologico" << endl;
+                        cout << "3. Editar zoologico" << endl;
+                        cout << "4. Eliminar zoologico" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionZoologico;
+
+                        switch (opcionZoologico) {
+                            case 1:
+                                mostrarDatosZoologico(conexion);
+                                break;
+                            case 2:
+                                insertarDatosZoologico(conexion);
+                                break;
+                            case 3:
+                                editarDatosZoologico(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosZoologico(conexion);
+                                break;
+                        }
+                    } while (opcionZoologico != 0);
+                }
+                break;
+            case 4:
+                {
+                    int opcionHabitat;
+                    do {
+                        cout << "Gestión de Habitats" << endl;
+                        cout << "1. Mostrar habitats" << endl;
+                        cout << "2. Insertar habitat" << endl;
+                        cout << "3. Editar habitat" << endl;
+                        cout << "4. Eliminar habitat" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionHabitat;
+
+                        switch (opcionHabitat) {
+                            case 1:
+                                mostrarDatosHabitat(conexion);
+                                break;
+                            case 2:
+                                insertarDatosHabitat(conexion);
+                                break;
+                            case 3:
+                                editarDatosHabitat(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosHabitat(conexion);
+                                break;
+                        }
+                    } while (opcionHabitat != 0);
+                }
+                break;
+            case 5:
+                {
+                    int opcionClima;
+                    do {
+                        cout << "Gestión de Climas" << endl;
+                        cout << "1. Mostrar climas" << endl;
+                        cout << "2. Insertar clima" << endl;
+                        cout << "3. Editar clima" << endl;
+                        cout << "4. Eliminar clima" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionClima;
+
+                        switch (opcionClima) {
+                            case 1:
+                                mostrarDatosClima(conexion);
+                                break;
+                            case 2:
+                                insertarDatosClima(conexion);
+                                break;
+                            case 3:
+                                editarDatosClima(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosClima(conexion);
+                                break;
+                        }
+                    } while (opcionClima != 0);
+                }
+                break;
+            case 6:
+                {
+                    int opcionVegetacion;
+                    do {
+                        cout << "Gestión de Vegetaciones" << endl;
+                        cout << "1. Mostrar vegetaciones" << endl;
+                        cout << "2. Insertar vegetacion" << endl;
+                        cout << "3. Editar vegetacion" << endl;
+                        cout << "4. Eliminar vegetacion" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionVegetacion;
+
+                        switch (opcionVegetacion) {
+                            case 1:
+                                mostrarDatosVegetacion(conexion);
+                                break;
+                            case 2:
+                                insertarDatosVegetacion(conexion);
+                                break;
+                            case 3:
+                                editarDatosVegetacion(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosVegetacion(conexion);
+                                break;
+                        }
+                    } while (opcionVegetacion != 0);
+                }
+                break;
+            case 7:
+                {
+                    int opcionSexo;
+                    do {
+                        cout << "Gestión de Sexos" << endl;
+                        cout << "1. Mostrar sexos" << endl;
+                        cout << "2. Insertar sexo" << endl;
+                        cout << "3. Editar sexo" << endl;
+                        cout << "4. Eliminar sexo" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionSexo;
+
+                        switch (opcionSexo) {
+                            case 1:
+                                mostrarDatosSexo(conexion);
+                                break;
+                            case 2:
+                                insertarDatosSexo(conexion);
+                                break;
+                            case 3:
+                                editarDatosSexo(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosSexo(conexion);
+                                break;
+                        }
+                    } while (opcionSexo != 0);
+                }
+                break;
+            case 8:
+                {
+                    int opcionEspecie;
+                    do {
+                        cout << "Gestión de Especies" << endl;
+                        cout << "1. Mostrar especies" << endl;
+                        cout << "2. Insertar especie" << endl;
+                        cout << "3. Editar especie" << endl;
+                        cout << "4. Eliminar especie" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionEspecie;
+
+                        switch (opcionEspecie) {
+                            case 1:
+                                mostrarDatosEspecie(conexion);
+                                break;
+                            case 2:
+                                insertarDatosEspecie(conexion);
+                                break;
+                            case 3:
+                                editarDatosEspecie(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosEspecie(conexion);
+                                break;
+                        }
+                    } while (opcionEspecie != 0);
+                }
+                break;
+            case 9:
+                {
+                    int opcionDieta;
+                    do {
+                        cout << "Gestión de Dietas" << endl;
+                        cout << "1. Mostrar dietas" << endl;
+                        cout << "2. Insertar dieta" << endl;
+                        cout << "3. Editar dieta" << endl;
+                        cout << "4. Eliminar dieta" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionDieta;
+
+                        switch (opcionDieta) {
+                            case 1:
+                                mostrarDatosDieta(conexion);
+                                break;
+                            case 2:
+                                insertarDatosDieta(conexion);
+                                break;
+                            case 3:
+                                editarDatosDieta(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosDieta(conexion);
+                                break;
+                        }
+                    } while (opcionDieta != 0);
+                }
+                break;
+            case 10:
+                {
+                    int opcionAnimal;
+                    do {
+                        cout << "Gestión de Animales" << endl;
+                        cout << "1. Mostrar animales" << endl;
+                        cout << "2. Insertar animal" << endl;
+                        cout << "3. Editar animal" << endl;
+                        cout << "4. Eliminar animal" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionAnimal;
+
+                        switch (opcionAnimal) {
+                            case 1:
+                                mostrarDatosAnimal(conexion);
+                                break;
+                            case 2:
+                                insertarDatosAnimal(conexion);
+                                break;
+                            case 3:
+                                editarDatosAnimal(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosAnimal(conexion);
+                                break;
+                        }
+                    } while (opcionAnimal != 0);
+                }
+                break;
+            case 11:
+                {
+                    int opcionAnimalHasDieta;
+                    do {
+                        cout << "Gestión de Animal-Dieta" << endl;
+                        cout << "1. Mostrar Animal-Dieta" << endl;
+                        cout << "2. Insertar Animal-Dieta" << endl;
+                        cout << "3. Editar Animal-Dieta" << endl;
+                        cout << "4. Eliminar Animal-Dieta" << endl;
+                        cout << "0. Volver" << endl;
+                        cout << "Ingrese una opción: ";
+                        cin >> opcionAnimalHasDieta;
+
+                        switch (opcionAnimalHasDieta) {
+                            case 1:
+                                mostrarDatosAnimalHasDieta(conexion);
+                                break;
+                            case 2:
+                                insertarDatosAnimalHasDieta(conexion);
+                                break;
+                            case 3:
+                                editarDatosAnimalHasDieta(conexion);
+                                break;
+                            case 4:
+                                eliminarDatosAnimalHasDieta(conexion);
+                                break;
+                        }
+                    } while (opcionAnimalHasDieta != 0);
+                }
+                break;
+            case 0:
+                cout << "Saliendo del programa..." << endl;
+                break;
+            default:
+                cout << "Opción no válida. Por favor, intente nuevamente." << endl;
+        }
+    } while (opcion != 0);
+}
+
+int main() {
+    menuPrincipal();
+}
 
