@@ -1,2 +1,2 @@
 # PROYECTO-DE-PROGRAMACI-N
-Creación de diagramas de entidad relación 
+Conexión de la base de datos zoologico_la_aurora a DevC++
